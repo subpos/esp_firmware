@@ -150,7 +150,7 @@ at_setupCmdCwsapRI(uint8_t id)
 //AT+CWSAPCH=<channel num> 
 
 //AT+CWSAPRI: 
-//AT+CWSAPCH
+//AT+CWSAPRI
 //Re-Init AP.
 
 extern void at_exeCmdCiupdate(uint8_t id);
