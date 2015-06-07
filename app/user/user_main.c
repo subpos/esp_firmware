@@ -61,6 +61,15 @@ at_setupCmdCwsapID(uint8_t id, char *pPara)
 
     os_bzero(&apConfig, sizeof(struct softap_config));
     wifi_softap_get_config(&apConfig);
+    
+    if(at_wifiMode == STATION_MODE)
+    {
+        at_response_error();
+        return;
+    }
+    //These values are already set if in AP mode.
+    //apConfig.password = "";
+    //apConfig.authmode = 0;
 
     len = at_dataStrCpy(apConfig.ssid, pPara, 32);
     apConfig.ssid_len = len;
@@ -114,6 +123,15 @@ void ICACHE_FLASH_ATTR
 at_setupCmdCwsapRI(uint8_t id)
 {
     struct softap_config apConfig;
+    
+    os_bzero(&apConfig, sizeof(struct softap_config));
+    wifi_softap_get_config(&apConfig);
+    
+    if(at_wifiMode == STATION_MODE)
+    {
+        at_response_error();
+        return;
+    }
 
     ETS_UART_INTR_DISABLE();
     wifi_softap_set_config_current(&apConfig);
