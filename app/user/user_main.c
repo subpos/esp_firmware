@@ -70,7 +70,7 @@ at_setupCmdCwsapID(uint8_t id, char *pPara)
     //These values are already set if in AP mode.
     //apConfig.password = "";
     //apConfig.authmode = 0;
-
+    pPara++;
     len = at_dataStrCpy(apConfig.ssid, pPara, 32);
     apConfig.ssid_len = len;
     
@@ -107,6 +107,7 @@ at_setupCmdCwsapCH(uint8_t id, char *pPara)
         at_response_error();
         return;
     }
+    pPara++;
     apConfig.channel = atoi(pPara);
     if(apConfig.channel<1 || apConfig.channel>13)
     {
@@ -142,13 +143,11 @@ at_setupCmdCwsapRI(uint8_t id)
 //These commands are the same as the regular AT commands, except they don't write the parameters to flash
 //AT+CWSAPID:
 //Set parameters of AP with no password or encryption.
-//AT+CWSAPID=<ssid>,<chl>
-//ssid, chl = channel
+//AT+CWSAPID="<ssid>",<channel num>
 
 //AT+CWSAPCH: 
 //Change AP channel.
-//AT+CWSAPCH=<chl> 
-//ssid, chl = channel
+//AT+CWSAPCH=<channel num> 
 
 //AT+CWSAPRI: 
 //AT+CWSAPCH
