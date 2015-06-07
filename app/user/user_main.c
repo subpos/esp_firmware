@@ -54,80 +54,40 @@ at_dataStrCpy(void *pDest, const void *pSrc, int8_t maxLen)
 }
 
 void ICACHE_FLASH_ATTR
-at_testCmdSCwmode(uint8_t id)
+at_setupCmdCwsapID(uint8_t id, char *pPara)
 {
-    char temp[32];
-    os_sprintf(temp, "%s:(1-3)\r\n", at_custom_cmd[id].at_cmdName);
-    at_port_print(temp);
-    at_response_ok();
-}
-
-void ICACHE_FLASH_ATTR
-at_queryCmdSCwmode(uint8_t id)
-{
-    char temp[32];
-
-    at_wifiMode = wifi_get_opmode();
-    os_sprintf(temp, "%s:%d\r\n", at_custom_cmd[id].at_cmdName, at_wifiMode);
-    at_port_print(temp);
-    at_response_ok();
-}
-
-void ICACHE_FLASH_ATTR
-at_setupCmdSCwmode(uint8_t id, char *pPara)
-{
-    uint8_t mode;
-    char temp[32];
-
-    pPara++;
-    mode = atoi(pPara);
-    if(mode == at_wifiMode)
-    {
-        at_response_ok();
-        return;
-    }
-    if((mode >= 1) && (mode <= 3))
-    {
-        ETS_UART_INTR_DISABLE();
-        wifi_set_opmode_current(mode);
-        ETS_UART_INTR_ENABLE();
-        at_wifiMode = mode;
-        at_response_ok();
-    }
-    else
-    {
-        at_response_error();
-    }
-}
-
-
-void ICACHE_FLASH_ATTR
-at_queryCmdSCwsap(uint8_t id)
-{
-    struct softap_config apConfig;
-    char temp[128];
-
-    if(at_wifiMode == STATION_MODE)
-    {
-        at_response_error();
-        return;
-    }
-    wifi_softap_get_config(&apConfig);
-    os_sprintf(temp,"%s:\"%s\",\"%s\",%d,%d\r\n",
-                         at_custom_cmd[id].at_cmdName,
-                         apConfig.ssid,
-                         apConfig.password,
-                         apConfig.channel,
-                         apConfig.authmode);
-    at_port_print(temp);
-    at_response_ok();
-}
-
-void ICACHE_FLASH_ATTR
-at_setupCmdSCwsap(uint8_t id, char *pPara)
-{
-    char temp[64];
     int8_t len,passLen;
+    struct softap_config apConfig;
+
+    os_bzero(&apConfig, sizeof(struct softap_config));
+    wifi_softap_get_config(&apConfig);
+
+    len = at_dataStrCpy(apConfig.ssid, pPara, 32);
+    apConfig.ssid_len = len;
+    
+    if(len < 1)
+    {
+        at_response_error();
+        return;
+    }
+    pPara += (len+3);
+
+    apConfig.channel = atoi(pPara);
+    if(apConfig.channel<1 || apConfig.channel>13)
+    {
+        at_response_error();
+        return;
+    }
+    ETS_UART_INTR_DISABLE();
+    wifi_softap_set_config_current(&apConfig);
+    ETS_UART_INTR_ENABLE();
+    at_response_ok();
+}
+
+void ICACHE_FLASH_ATTR
+at_setupCmdCwsapCH(uint8_t id, char *pPara)
+{
+    int8_t len;
     struct softap_config apConfig;
 
     os_bzero(&apConfig, sizeof(struct softap_config));
@@ -138,39 +98,8 @@ at_setupCmdSCwsap(uint8_t id, char *pPara)
         at_response_error();
         return;
     }
-    pPara++;
-    len = at_dataStrCpy(apConfig.ssid, pPara, 32);
-    apConfig.ssid_len = len;
-    
-    if(len < 1)
-    {
-        at_response_error();
-        return;
-    }
-    pPara += (len+3);
-    passLen = at_dataStrCpy(apConfig.password, pPara, 64);
-    if(passLen == -1 )
-    {
-        at_response_error();
-        return;
-    }
-    pPara += (passLen+3);
     apConfig.channel = atoi(pPara);
     if(apConfig.channel<1 || apConfig.channel>13)
-    {
-        at_response_error();
-        return;
-    }
-    pPara++;
-    pPara = strchr(pPara, ',');
-    pPara++;
-    apConfig.authmode = atoi(pPara);
-    if(apConfig.authmode >= 5)
-    {
-        at_response_error();
-        return;
-    }
-    if((apConfig.authmode != 0)&&(passLen < 5))
     {
         at_response_error();
         return;
@@ -182,14 +111,20 @@ at_setupCmdSCwsap(uint8_t id, char *pPara)
 }
 
 //These commands are the same as the regular AT commands, except they don't write the parameters to flash
-//AT+CWMODESP- wifi mode           | AT+CWMODE=? | AT+CWMODE=<mode>                  | 1= Sta, 2= AP, 3=both, Sta is the default 
-//                                                                                     mode of router, AP is a normal mode for devices 
-//AT+CWSAPSP - set parameters of AP| AT+CWSAP?   | AT+CWSAP=<ssid>,<pwd>,<chl>,<ecn> | ssid, pwd, chl = channel, ecn = encryption
+//AT+CWSAPID:
+//Set parameters of AP with no password or encryption.
+//AT+CWSAPID=<ssid>,<chl>
+//ssid, chl = channel
+
+//AT+CWSAPCH: 
+//Change AP channel, changing to same channel re-initialises AP.
+//AT+CWSAPCH=<chl> 
+//ssid, chl = channel
 
 extern void at_exeCmdCiupdate(uint8_t id);
 at_funcationType at_custom_cmd[] = {
-        {"+CWMODESP", 9, at_testCmdSCwmode, at_queryCmdSCwmode, at_setupCmdSCwmode, NULL},
-        {"+CWSAPSP", 8, NULL, at_queryCmdSCwsap, at_setupCmdSCwsap, NULL}
+        {"+CWSAPID", 8, NULL, NULL, at_setupCmdCwsapID, NULL},
+        {"+CWSAPCH", 8, NULL, NULL, at_setupCmdCwsapCH, NULL}
 };
 
 void user_rf_pre_init(void)
