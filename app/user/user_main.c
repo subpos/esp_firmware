@@ -110,6 +110,17 @@ at_setupCmdCwsapCH(uint8_t id, char *pPara)
     at_response_ok();
 }
 
+void ICACHE_FLASH_ATTR
+at_setupCmdCwsapRI(uint8_t id)
+{
+    struct softap_config apConfig;
+
+    ETS_UART_INTR_DISABLE();
+    wifi_softap_set_config_current(&apConfig);
+    ETS_UART_INTR_ENABLE();
+    at_response_ok();
+}
+
 //These commands are the same as the regular AT commands, except they don't write the parameters to flash
 //AT+CWSAPID:
 //Set parameters of AP with no password or encryption.
@@ -117,13 +128,18 @@ at_setupCmdCwsapCH(uint8_t id, char *pPara)
 //ssid, chl = channel
 
 //AT+CWSAPCH: 
-//Change AP channel, changing to same channel re-initialises AP.
+//Change AP channel.
 //AT+CWSAPCH=<chl> 
 //ssid, chl = channel
+
+//AT+CWSAPRI: 
+//AT+CWSAPCH
+//Re-Init AP.
 
 extern void at_exeCmdCiupdate(uint8_t id);
 at_funcationType at_custom_cmd[] = {
         {"+CWSAPID", 8, NULL, NULL, at_setupCmdCwsapID, NULL},
+        {"+CWSAPRI", 8, NULL, NULL, NULL, at_setupCmdCwsapRI},
         {"+CWSAPCH", 8, NULL, NULL, at_setupCmdCwsapCH, NULL}
 };
 
