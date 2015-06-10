@@ -142,7 +142,7 @@ at_setupCmdCwsapRI(uint8_t id)
 
 //These commands are the same as the regular AT commands, except they don't write the parameters to flash
 //AT+CWSAPID:
-//Set parameters of AP with no password or encryption.
+//Set parameters of AP with existing password and encryption.
 //AT+CWSAPID="<ssid>",<channel num>
 
 //AT+CWSAPCH: 
